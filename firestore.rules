@@ -35,23 +35,21 @@ service cloud.firestore {
     function isOwnerAndValidPost(data) {
     	return isOwner() && isValidPost(data);
     }
-    match /users/{userId} {
+    match /users/{userName} {
     	allow read: if true;
-			allow create: if request.auth.uid != null;    
+      allow create: if request.auth.uid != null;
       match /posts/{postId} {
         allow read: if true;
-        allow create: if request.auth.uid == userId
+        // TODO: temporary hotfix
+        allow create: if true //request.auth.uid == userId
         	&& isValidUserPost(request.resource.data);
         allow update: if request.auth.uid == userId
         	&& isValidUserPost(request.resource.data);
         allow delete: if request.auth.uid == userId;
       }
     }
-    match /posts/{post} {
+    match /allPosts/{post} {
     	allow read: if true;
-    	allow create: if isValidPost(request.resource.data);
-      allow update: if isOwnerAndValidPost(data);
-      allow delete: if isOwner();
     }
   }
 }

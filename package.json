@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "deploy:firestore": "firebase deploy --only firestore",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Shinonomkazan Co., Ltd.",
