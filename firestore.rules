@@ -1,0 +1,57 @@
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    function isValidPost(data) {
+  		return true
+      	&& request.auth.uid != null
+      	&& data.size() == 5
+      	&& data.subject != null
+      	&& data.subject.size() < 200
+        && data.userId == request.auth.uid
+        && data.body != null
+        && data.body.size() > 0
+        && data.body.size() < 262144
+        && data.created != null
+        && data.updated != null
+        ;
+    }
+    function isValidUserPost(data) {
+  		return true
+      	&& data.size() == 4
+      	&& data.subject != null
+      	&& data.subject.size() < 200
+        && data.body != null
+        && data.body.size() > 0
+        && data.body.size() < 262144
+        && data.created != null
+        && data.updated != null
+        ;
+    }
+    function isOwner() {
+    	return request.auth.uid == resource.data.userId;
+    }
+    function isOwnerAndValidPost(data) {
+    	return isOwner() && isValidPost(data);
+    }
+    match /users/{userId} {
+    	allow read: if true;
+			allow create: if request.auth.uid != null;    
+      match /posts/{postId} {
+        allow read: if true;
+        allow create: if request.auth.uid == userId
+        	&& isValidUserPost(request.resource.data);
+        allow update: if request.auth.uid == userId
+        	&& isValidUserPost(request.resource.data);
+        allow delete: if request.auth.uid == userId;
+      }
+    }
+    match /posts/{post} {
+    	allow read: if true;
+    	allow create: if isValidPost(request.resource.data);
+      allow update: if isOwnerAndValidPost(data);
+      allow delete: if isOwner();
+    }
+  }
+}
