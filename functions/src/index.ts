@@ -26,7 +26,7 @@ interface UserData {
 	created: FirebaseFirestore.Timestamp;
 	name: string;
 	displayName: string;
-	postCount?: number;
+	postCount: number;
 }
 
 async function copyToAllPost(snapshot: FirebaseFirestore.DocumentSnapshot, userName: string) {
@@ -55,7 +55,7 @@ async function incrementUserPostCount(userName: string) {
 		// 本当はこの参照を一つやめたいが現状手がなさそう
 		const userRef = firestore.collection("users").doc(userName);
 		const userData = (await userRef.get()).data()!;
-		const postCount = userData.postCount == null ? 1 : userData.postCount + 1;
+		const postCount = userData.postCount + 1;
 		return userRef.update({
 			postCount
 		});
@@ -69,7 +69,7 @@ async function decrementUserPostCount(userName: string) {
 		// 本当はこの参照を一つやめたいが現状手がなさそう
 		const userRef = firestore.collection("users").doc(userName);
 		const userData = (await userRef.get()).data()!;
-		const postCount = userData.postCount == null ? 0 : userData.postCount - 1;
+		const postCount = userData.postCount - 1;
 		return userRef.update({
 			postCount
 		});
