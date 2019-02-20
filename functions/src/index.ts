@@ -149,7 +149,7 @@ function writeUserPostHandler(
 		// afterがないのでdeleteと判定
 		return decrementUserPostCount(userName);
 	} else {
-		// 両方あるのでupdateと半手い
+		// 両方あるのでupdateと判定
 		return updateToAllPost(change.before, change.after, userName);
 	}
 }
