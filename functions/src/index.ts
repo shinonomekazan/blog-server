@@ -91,6 +91,18 @@ async function updateToAllPost(change: functions.Change<FirebaseFirestore.Docume
 	}
 }
 
+async function copyToUserToUserIds(snapshot: FirebaseFirestore.DocumentSnapshot, context: functions.EventContext) {
+	const user = snapshot.data() as UserData;
+	try {
+		const userIdData = {
+			name: user.name
+		};
+		return await firestore.collection("userIds").doc(user.id).set(userIdData);
+	} catch (error) {
+		return Promise.reject(error);
+	}
+}
 
 export const onUserPostCreate = functions.firestore.document("/users/{userName}/posts/{postId}").onCreate(copyToAllPost);
-functions.firestore.document("/users/{userName}/posts/{postId}").onUpdate(updateToAllPost);
+export const onUserPostUpdate = functions.firestore.document("/users/{userName}/posts/{postId}").onUpdate(updateToAllPost);
+export const onUserCreate = functions.firestore.document("/users/{userName}").onCreate(copyToUserToUserIds);
