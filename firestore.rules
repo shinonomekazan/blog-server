@@ -35,10 +35,22 @@ service cloud.firestore {
     function isOwnerAndValidPost(data) {
     	return isOwner() && isValidPost(data);
     }
+    function isValidUser(data) {
+      // 本当はもう少し細かくチェックする
+      return data.size() == 5
+        && data.id != null
+        && data.name != null
+        && data.displayName != null
+        && data.created != null
+        && data.postCount != null
+        ;
+    }
 
     match /users/{userName} {
     	allow read: if true;
-      allow create: if request.auth.uid != null;
+      allow create: if request.auth.uid != null
+        && isValidUser(request.resource.data)
+        && request.resource.data.postCount == 0;
       match /posts/{postId} {
         allow read: if true;
         // TODO: temporary hotfix

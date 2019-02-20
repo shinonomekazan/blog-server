@@ -26,11 +26,10 @@ interface UserData {
 	created: FirebaseFirestore.Timestamp;
 	name: string;
 	displayName: string;
+	postCount?: number;
 }
 
-async function copyToAllPost(snapshot: FirebaseFirestore.DocumentSnapshot, context: functions.EventContext) {
-	const userName: string = context.params.userName;
-	// const postId: string = context.params.postId;
+async function copyToAllPost(snapshot: FirebaseFirestore.DocumentSnapshot, userName: string) {
 	const post = snapshot.data() as UserPost;
 	try {
 		const user = await firestore.collection("users").doc(userName).get();
@@ -51,11 +50,40 @@ async function copyToAllPost(snapshot: FirebaseFirestore.DocumentSnapshot, conte
 	}
 }
 
-async function updateToAllPost(change: functions.Change<FirebaseFirestore.DocumentSnapshot>, context: functions.EventContext) {
-	const userName: string = context.params.userName;
+async function incrementUserPostCount(userName: string) {
+	try {
+		// 本当はこの参照を一つやめたいが現状手がなさそう
+		const userRef = firestore.collection("users").doc(userName);
+		const userData = (await userRef.get()).data()!;
+		const postCount = userData.postCount == null ? 1 : userData.postCount + 1;
+		return userRef.update({
+			postCount
+		});
+	} catch (error) {
+		return Promise.reject(error);
+	}
+}
+
+async function decrementUserPostCount(userName: string) {
+	try {
+		// 本当はこの参照を一つやめたいが現状手がなさそう
+		const userRef = firestore.collection("users").doc(userName);
+		const userData = (await userRef.get()).data()!;
+		const postCount = userData.postCount == null ? 0 : userData.postCount - 1;
+		return userRef.update({
+			postCount
+		});
+	} catch (error) {
+		return Promise.reject(error);
+	}
+}
+
+async function updateToAllPost(oldPost: FirebaseFirestore.DocumentSnapshot,
+	newPost: FirebaseFirestore.DocumentSnapshot,
+	userName: string) {
 	// const postId: string = context.params.postId;
-	const oldPostRef = change.before!.ref
-	const post = change.after!.data() as UserPost;
+	const oldPostRef = oldPost.ref
+	const post = newPost.data() as UserPost;
 	try {
 		const user = await firestore.collection("users").doc(userName).get();
 		const userData = user.data() as UserData;
@@ -63,7 +91,7 @@ async function updateToAllPost(change: functions.Change<FirebaseFirestore.Docume
 			userId: userData.id,
 			userName: userData.name,
 			userDisplayName: userData.displayName,
-			postRef: change.after!.ref,
+			postRef: newPost.ref,
 			created: post.created,
 			updated: post.updated,
 			subject: post.subject,
@@ -103,6 +131,32 @@ async function copyToUserToUserIds(snapshot: FirebaseFirestore.DocumentSnapshot,
 	}
 }
 
-export const onUserPostCreate = functions.firestore.document("/users/{userName}/posts/{postId}").onCreate(copyToAllPost);
-export const onUserPostUpdate = functions.firestore.document("/users/{userName}/posts/{postId}").onUpdate(updateToAllPost);
+function writeUserPostHandler(
+	change: functions.Change<FirebaseFirestore.DocumentSnapshot>,
+	context: functions.EventContext) {
+
+	const userName = context.params.userName as string;
+
+	if (change.before == null || !change.before.exists) {
+		// beforeがないのでcreateと判定
+		if (change.after == null || ! change.after.exists) {
+			return Promise.reject(new Error("before and after is null"));
+		}
+		const copyPromise = copyToAllPost(change.after, userName);
+		const incrementPromise = incrementUserPostCount(userName);
+		return Promise.all([copyPromise, incrementPromise]);
+	} else if (change.after == null || !change.after.exists) {
+		// afterがないのでdeleteと判定
+		return decrementUserPostCount(userName);
+	} else {
+		// 両方あるのでupdateと半手い
+		return updateToAllPost(change.before, change.after, userName);
+	}
+}
+
+const userPosts = functions.firestore.document("/users/{userName}/posts/{postId}");
+export const onUserPostWrite = userPosts.onWrite(writeUserPostHandler);
+// 元々はonCreateとonUpdateを療法トラップしていたが、一度onWriteで一括で受けることにした
+// export const onUserPostCreate = userPosts.onCreate(copyToAllPost);
+// export const onUserPostUpdate = userPosts.onUpdate(updateToAllPost);
 export const onUserCreate = functions.firestore.document("/users/{userName}").onCreate(copyToUserToUserIds);
