@@ -18,5 +18,10 @@
     - `npm run deploy:firestore` でデプロイできます
 - `functions` は使ってます
     - functionsにcdした後で`npm run deploy` でデプロイできます
+- `hosting` は使ってます
+    - `npm run deploy:hosting` でデプロイできます
+- `public` の内容
+    - [blog](https://cli.vuejs.org/) で `npm run build` するとできる `dist` の内容をコピーしてます
+    - `env.local` が入るので変なものが入り込まないように注意して下さい
 
 あとはまだ勉強中なのでテンプレのままです。

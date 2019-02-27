@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:hosting": "firebase deploy --only hosting",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Shinonomkazan Co., Ltd.",
