@@ -20,6 +20,8 @@
     - functionsにcdした後で`npm run deploy` でデプロイできます
 - `hosting` は使ってます
     - `npm run deploy:hosting` でデプロイできます
+- `storage` は使ってます
+    - `npm run deploy:storage` でデプロイできます
 - `public` の内容
     - [blog](https://cli.vuejs.org/) で `npm run build` するとできる `dist` の内容をコピーしてます
     - `env.local` が入るので変なものが入り込まないように注意して下さい

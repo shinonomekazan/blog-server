@@ -1,7 +1,26 @@
 service firebase.storage {
+  function isSupportedFile(contentType) {
+    return contentType.matches("image/.*")
+      || contentType == "application/pdf"
+      || contentType == "text/plain"
+    ;
+  }
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      allow read, write: if request.auth!=null;
+      allow read, write: if false;
+    }
+    match /user/{userId} {
+      match /public/{allPaths=**} {
+        allow read: if true;
+      }
+      match /private/{allPaths=**} {
+        allow read: if request.auth.uid == userId;
+      }
+      match /{allPaths=**} {
+        allow write: if request.auth.uid == userId
+          && request.resource.size < 20 * 1024 * 1024
+          && isSupportedFile(request.resource.contentType);
+      }
     }
   }
 }
